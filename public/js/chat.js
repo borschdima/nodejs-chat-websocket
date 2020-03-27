@@ -5,14 +5,18 @@ const $form = document.querySelector("form");
 const $formBtn = document.querySelector("form button");
 const $formInput = document.querySelector("form input");
 const $locationBtn = document.querySelector("#locationBtn");
+const $messages = document.querySelector("#messages");
+const $notification = document.querySelector("#notification");
+const $burgerBtn = document.querySelector(".burger");
+const $sidebar = document.querySelector("#sidebar");
+const $chat = document.querySelector(".chat");
 
 // templates
-const $messages = document.querySelector("#messages");
-const $sidebar = document.querySelector("#sidebar");
 const messageTemplate = document.querySelector("#message-template").innerHTML;
 const adminMessageTemplate = document.querySelector("#admin-message-template").innerHTML;
 const locationTemplate = document.querySelector("#location-template").innerHTML;
 const sidebarTemplate = document.querySelector("#sidebar-template").innerHTML;
+const typingTemplate = document.querySelector("#typing-template").innerHTML;
 
 // options
 const { username, room } = Qs.parse(location.search, { ignoreQueryPrefix: true });
@@ -40,6 +44,15 @@ const autoScroll = () => {
 	}
 };
 
+$burgerBtn.addEventListener("click", () => {
+	$burgerBtn.classList.toggle("burger_close");
+	$sidebar.classList.toggle("chat__sidebar_close");
+});
+
+$formInput.addEventListener("input", () => {
+	socket.emit("typing");
+});
+
 locationBtn.addEventListener("click", () => {
 	if (!navigator.geolocation) {
 		return alert("Geolocation is not supported by your browser!");
@@ -52,7 +65,6 @@ locationBtn.addEventListener("click", () => {
 		const longitude = coords.longitude;
 
 		socket.emit("sendLocation", { latitude, longitude }, () => {
-			console.log("Location shared!");
 			$locationBtn.removeAttribute("disabled");
 		});
 	});
@@ -67,18 +79,22 @@ $form.addEventListener("submit", e => {
 		$formBtn.removeAttribute("disabled");
 		$formInput.value = "";
 		$formInput.focus();
-
-		console.log("The message was delivered: ", msg);
 	});
 });
 
-socket.on("message", ({ username, text, createdAt }) => {
+socket.on("message", ({ username, text, createdAt, className }) => {
 	const html = Mustache.render(messageTemplate, {
+		className,
 		username,
 		message: text,
 		createdAt: moment(createdAt).format("HH:mm")
 	});
 	$messages.insertAdjacentHTML("beforeend", html);
+
+	const $userTypingNotification = $notification.querySelector(`#${username}-typing`);
+	if ($userTypingNotification) {
+		$userTypingNotification.remove();
+	}
 	autoScroll();
 });
 
@@ -90,13 +106,29 @@ socket.on("admin-message", text => {
 	autoScroll();
 });
 
-socket.on("location", ({ username, url, createdAt }) => {
+socket.on("location", ({ username, url, createdAt, className }) => {
 	const html = Mustache.render(locationTemplate, {
+		className,
 		username,
 		url,
 		createdAt: moment(createdAt).format("HH:mm")
 	});
 	$messages.insertAdjacentHTML("beforeend", html);
+	autoScroll();
+});
+
+socket.on("messageTyping", ({ username }) => {
+	const html = Mustache.render(typingTemplate, {
+		username
+	});
+	const $userTypingNotification = $notification.querySelector(`#${username}-typing`);
+	if (!$userTypingNotification) {
+		$notification.insertAdjacentHTML("beforeend", html);
+	}
+
+	setTimeout(() => {
+		if ($userTypingNotification) $userTypingNotification.remove();
+	}, 2000);
 	autoScroll();
 });
 
@@ -114,3 +146,6 @@ socket.emit("join", { username, room }, error => {
 		location.href = "/";
 	}
 });
+
+let vh = window.innerHeight * 0.01;
+$chat.style.setProperty("--vh", `${vh}px`);

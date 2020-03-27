@@ -33,17 +33,25 @@ io.on("connection", socket => {
 		callback();
 	});
 
+	socket.on("typing", () => {
+		const user = getUser(socket.id);
+
+		socket.broadcast.to(user.room).emit("messageTyping", user);
+	});
+
 	socket.on("sendMessage", (msg, callback) => {
 		const user = getUser(socket.id);
 
-		io.to(user.room).emit("message", generateMessage(user.username, msg));
+		socket.emit("message", generateMessage(user.username, msg, "message_mine"));
+		socket.broadcast.to(user.room).emit("message", generateMessage(user.username, msg));
 		callback();
 	});
 
 	socket.on("sendLocation", (coords, callback) => {
 		const user = getUser(socket.id);
 
-		io.to(user.room).emit("location", generateLocationMessage(user.username, `https://google.com/maps?q=${coords.latitude},${coords.longitude}`));
+		socket.emit("location", generateLocationMessage(user.username, `https://google.com/maps?q=${coords.latitude},${coords.longitude}`, "message_mine"));
+		socket.broadcast.to(user.room).emit("location", generateLocationMessage(user.username, `https://google.com/maps?q=${coords.latitude},${coords.longitude}`));
 		callback();
 	});
 
