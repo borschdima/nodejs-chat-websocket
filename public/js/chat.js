@@ -9,7 +9,6 @@ const $messages = document.querySelector("#messages");
 const $notification = document.querySelector("#notification");
 const $burgerBtn = document.querySelector(".burger");
 const $sidebar = document.querySelector("#sidebar");
-const $chat = document.querySelector(".chat");
 
 // templates
 const messageTemplate = document.querySelector("#message-template").innerHTML;
@@ -78,7 +77,6 @@ $form.addEventListener("submit", e => {
 	socket.emit("sendMessage", message, msg => {
 		$formBtn.removeAttribute("disabled");
 		$formInput.value = "";
-		$formInput.focus();
 	});
 });
 
@@ -148,4 +146,4 @@ socket.emit("join", { username, room }, error => {
 });
 
 let vh = window.innerHeight * 0.01;
-$chat.style.setProperty("--vh", `${vh}px`);
+document.documentElement.style.setProperty("--vh", `${vh}px`);
