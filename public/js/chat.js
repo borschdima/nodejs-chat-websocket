@@ -49,7 +49,7 @@ $burgerBtn.addEventListener("click", () => {
 });
 
 $formInput.addEventListener("input", () => {
-	socket.emit("typing");
+	socket.emit("typing", () => {});
 });
 
 locationBtn.addEventListener("click", () => {
